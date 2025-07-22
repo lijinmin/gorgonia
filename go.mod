@@ -1,4 +1,4 @@
-module gorgonia.org/gorgonia
+module github.com/lijinmin/gorgonia
 
 go 1.16
 
