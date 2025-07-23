@@ -11,11 +11,11 @@ import (
 type padOp struct {
 	padTop, padBottom, padLeft, padRight int
 	mode                                 string
-	Value                                float64
+	Value                                interface{}
 	mask                                 tensor.Tensor
 }
 
-func makePadOp(inputShape tensor.Shape, padTop, padBottom, padLeft, padRight int, mode string, Value float64) *padOp {
+func makePadOp(inputShape tensor.Shape, padTop, padBottom, padLeft, padRight int, mode string, Value interface{}) *padOp {
 	op := &padOp{
 		padTop:    padTop,
 		padBottom: padBottom,
@@ -84,42 +84,6 @@ func (op *padOp) UsePreallocDo(prealloc Value, inputs ...Value) (Value, error) {
 	return nil, errors.Errorf("Expected prealloc to be a tensor")
 }
 
-func (op *padOp) DiffWRT(inputs int) []bool { return []bool{true} }
-
-func (op *padOp) SymDiff(inputs Nodes, output, grad *Node) (retVal Nodes, err error) {
-	if err = checkArity(op, len(inputs)); err != nil {
-		return
-	}
-	input := inputs[0]
-
-	var op2 maxPoolOp
-	op2 = *op
-	diff := &maxPoolDiffOp{op2}
-
-	var ret *Node
-	if ret, err = ApplyOp(diff, input, output, grad); err != nil {
-		return nil, err
-	}
-	return Nodes{ret}, nil
-}
-
-func (op *padOp) DoDiff(ctx ExecutionContext, inputs Nodes, output *Node) (err error) {
-	if err = checkArity(op, len(inputs)); err != nil {
-		return
-	}
-	input := inputs[0]
-	inputDV, outDV := getDV(input, output)
-
-	var op2 maxPoolOp
-	op2 = *op
-	diff := &maxPoolDiffOp{op2}
-
-	if _, err = diff.UsePreallocDo(inputDV.d, inputDV.Value, outDV.Value, outDV.d); err != nil {
-		return errors.Wrapf(err, doFail, diff)
-	}
-	return
-}
-
 func (op *padOp) checkInput(inputs ...Value) (tensor.Tensor, error) {
 	if err := checkArity(op, len(inputs)); err != nil {
 		return nil, err
@@ -185,38 +149,33 @@ func (op *padOp) f32s(batches, channels, outH, outW, inH, inW,
 
 	// set values
 	for i := range outData {
-		outData[i] = -maxFloat32
+		outData[i] = op.Value.(float32)
 		maskData[i] = -1
 	}
-	padH := op.padNorth
-	padW := op.padWest
-	if op.explicitPadding {
-		padH = op.padSouth
-		padW = op.padEast
-	}
+	startTop := -op.padTop
+	endBottom := inH + op.padBottom
+	startLeft := -op.padLeft
+	endRight := inW + op.padRight
 
 	for b := 0; b < batches; b++ {
 		for c := 0; c < channels; c++ {
-			for ph := 0; ph < outH; ph++ {
-				for pw := 0; pw < outW; pw++ {
-
-					hStart := ph*op.strideH - padH
-					wStart := pw*op.strideW - padW
-					hEnd := minInt(hStart+op.h, inH)
-					wEnd := minInt(wStart+op.w, inW)
-					hStart = maxInt(hStart, 0)
-					wStart = maxInt(wStart, 0)
-
-					poolIndex := ph*outW + pw
-					for hi := hStart; hi < hEnd; hi++ {
-						for wi := wStart; wi < wEnd; wi++ {
-							i := hi*inW + wi
-							if inData[i] > outData[poolIndex] {
-								outData[poolIndex] = inData[i]
-								maskData[poolIndex] = i
-							}
-						}
+			outy := 0
+			for ph := startTop; ph < endBottom; ph++ {
+				outy += 1
+				if ph < 0 || ph > inH {
+					continue
+				}
+				outx := 0
+				for pw := startLeft; pw < endRight; pw++ {
+					outx += 1
+					if pw < 0 || pw > inW {
+						continue
 					}
+					outIndex := (outy-1)*outW + outx - 1
+
+					inIndex := ph*inW + pw
+
+					outData[outIndex] = inData[inIndex]
 				}
 			}
 			// skip by strides
@@ -234,38 +193,33 @@ func (op *padOp) f64s(batches, channels, outH, outW, inH, inW,
 
 	// set values
 	for i := range outData {
-		outData[i] = -maxFloat64
+		outData[i] = op.Value.(float64)
 		maskData[i] = -1
 	}
-	padH := op.padNorth
-	padW := op.padWest
-	if op.explicitPadding {
-		padH = op.padSouth
-		padW = op.padEast
-	}
+	startTop := -op.padTop
+	endBottom := inH + op.padBottom
+	startLeft := -op.padLeft
+	endRight := inW + op.padRight
 
 	for b := 0; b < batches; b++ {
 		for c := 0; c < channels; c++ {
-			for ph := 0; ph < outH; ph++ {
-				for pw := 0; pw < outW; pw++ {
-					hStart := ph*op.strideH - padH
-					wStart := pw*op.strideW - padW
-					hEnd := minInt(hStart+op.h, inH)
-					wEnd := minInt(wStart+op.w, inW)
-					hStart = maxInt(hStart, 0)
-					wStart = maxInt(wStart, 0)
-
-					poolIndex := ph*outW + pw
-
-					for hi := hStart; hi < hEnd; hi++ {
-						for wi := wStart; wi < wEnd; wi++ {
-							i := hi*inW + wi
-							if inData[i] > outData[poolIndex] {
-								outData[poolIndex] = inData[i]
-								maskData[poolIndex] = i
-							}
-						}
+			outy := 0
+			for ph := startTop; ph < endBottom; ph++ {
+				outy += 1
+				if ph < 0 || ph > inH {
+					continue
+				}
+				outx := 0
+				for pw := startLeft; pw < endRight; pw++ {
+					outx += 1
+					if pw < 0 || pw > inW {
+						continue
 					}
+					outIndex := (outy-1)*outW + outx - 1
+
+					inIndex := ph*inW + pw
+
+					outData[outIndex] = inData[inIndex]
 				}
 			}
 			// skip by strides
