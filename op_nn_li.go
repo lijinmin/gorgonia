@@ -162,13 +162,13 @@ func (op *padOp) f32s(batches, channels, outH, outW, inH, inW,
 			outy := 0
 			for ph := startTop; ph < endBottom; ph++ {
 				outy += 1
-				if ph < 0 || ph > inH {
+				if ph < 0 || ph >= inH {
 					continue
 				}
 				outx := 0
 				for pw := startLeft; pw < endRight; pw++ {
 					outx += 1
-					if pw < 0 || pw > inW {
+					if pw < 0 || pw >= inW {
 						continue
 					}
 					outIndex := (outy-1)*outW + outx - 1
@@ -206,13 +206,13 @@ func (op *padOp) f64s(batches, channels, outH, outW, inH, inW,
 			outy := 0
 			for ph := startTop; ph < endBottom; ph++ {
 				outy += 1
-				if ph < 0 || ph > inH {
+				if ph < 0 || ph >= inH {
 					continue
 				}
 				outx := 0
 				for pw := startLeft; pw < endRight; pw++ {
 					outx += 1
-					if pw < 0 || pw > inW {
+					if pw < 0 || pw >= inW {
 						continue
 					}
 					outIndex := (outy-1)*outW + outx - 1

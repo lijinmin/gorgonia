@@ -12,7 +12,7 @@ func main() {
 	xVal := tensor.New(tensor.WithShape(1, 1, 4, 4), tensor.WithBacking(xData)) // batch channel height width
 	x := G.NewTensor(g, tensor.Float64, 4, G.WithValue(xVal), G.WithName("x"))
 
-	z, err := G.Pad(x, []int{1, 2, 1, 3})
+	z, err := G.Pad(x, []int{-1, 2, -1, 3})
 	if err != nil {
 		log.Error(err)
 	}
