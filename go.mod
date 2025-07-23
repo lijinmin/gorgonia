@@ -3,9 +3,7 @@ module gorgonia.org/gorgonia
 go 1.16
 
 require (
-
 	github.com/apache/arrow/go/arrow v0.0.0-20211112161151-bc219186db40 // indirect
-
 	github.com/awalterschulze/gographviz v2.0.3+incompatible
 	github.com/chewxy/hm v1.0.0
 	github.com/chewxy/math32 v1.10.1
@@ -14,6 +12,7 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/leesper/go_rng v0.0.0-20190531154944-a612b043e353
 	github.com/mattn/go-runewidth v0.0.13 // indirect
+	github.com/ngaut/log v0.0.0-20221012222132-f3329cba28a5 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0
 	github.com/xtgo/set v1.0.0

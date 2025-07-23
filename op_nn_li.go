@@ -11,18 +11,18 @@ import (
 type padOp struct {
 	padTop, padBottom, padLeft, padRight int
 	mode                                 string
-	Value                                interface{}
+	value                                interface{}
 	mask                                 tensor.Tensor
 }
 
-func makePadOp(inputShape tensor.Shape, padTop, padBottom, padLeft, padRight int, mode string, Value interface{}) *padOp {
+func makePadOp(inputShape tensor.Shape, padTop, padBottom, padLeft, padRight int, mode string, value interface{}) *padOp {
 	op := &padOp{
 		padTop:    padTop,
 		padBottom: padBottom,
 		padLeft:   padLeft,
 		padRight:  padRight,
 		mode:      mode,
-		Value:     Value,
+		value:     value,
 	}
 	op.mask = tensor.New(tensor.Of(tensor.Int), tensor.WithShape(op.calcShape(inputShape)...))
 	return op
@@ -59,7 +59,7 @@ func (op *padOp) OverwritesInput() int { return -1 }
 func (op *padOp) WriteHash(h hash.Hash) {
 	fmt.Fprintf(h, "Pad{%d, %d, %d, %d}( mode: (%s),value: (%f)",
 		op.padTop, op.padBottom, op.padLeft, op.padRight,
-		op.mode, op.Value)
+		op.mode, op.value)
 }
 
 func (op *padOp) Hashcode() uint32 { return simpleHash(op) }
@@ -67,7 +67,7 @@ func (op *padOp) Hashcode() uint32 { return simpleHash(op) }
 func (op *padOp) String() string {
 	return fmt.Sprintf("Pad{%d, %d, %d, %d}( mode: (%s),value: (%f)",
 		op.padTop, op.padBottom, op.padLeft, op.padRight,
-		op.mode, op.Value)
+		op.mode, op.value)
 }
 
 func (op *padOp) UsePreallocDo(prealloc Value, inputs ...Value) (Value, error) {
@@ -149,7 +149,7 @@ func (op *padOp) f32s(batches, channels, outH, outW, inH, inW,
 
 	// set values
 	for i := range outData {
-		outData[i] = op.Value.(float32)
+		outData[i] = op.value.(float32)
 		maskData[i] = -1
 	}
 	startTop := -op.padTop
@@ -193,7 +193,7 @@ func (op *padOp) f64s(batches, channels, outH, outW, inH, inW,
 
 	// set values
 	for i := range outData {
-		outData[i] = op.Value.(float64)
+		outData[i] = op.value.(float64)
 		maskData[i] = -1
 	}
 	startTop := -op.padTop
